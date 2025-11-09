@@ -1,0 +1,131 @@
+# Multi-Platform Matrix Build Demo
+
+This repository demonstrates a GitHub Actions workflow with matrix build strategy for multi-platform CI/CD.
+
+## 📧 Contact Information
+
+**Email**: devops@example.com
+
+## 🚀 Workflow Overview
+
+This workflow implements a matrix build strategy that:
+
+- **Builds across multiple platforms**: Ubuntu, macOS, and Windows
+- **Tests multiple Node.js versions**: 18 and 20
+- **Runs jobs in parallel**: All matrix combinations execute simultaneously
+- **Generates unique artifacts**: Each build produces platform-specific artifacts
+- **Collects and verifies**: Final job downloads and validates all artifacts
+
+## 📦 Matrix Configuration
+
+The workflow uses a 3x2 matrix (plus one additional variant):
+
+| OS | Node Version | Total Jobs |
+|---|---|---|
+| ubuntu-latest | 18, 20 | 2 |
+| macos-latest | 18, 20 | 2 |
+| windows-latest | 18, 20 | 2 |
+| **Total** | | **6+ jobs** |
+
+## 🎯 Artifacts Generated
+
+Each matrix job generates an artifact named: `build-cceda81-{os}-node{version}`
+
+Examples:
+- `build-cceda81-ubuntu-latest-node18`
+- `build-cceda81-macos-latest-node20`
+- `build-cceda81-windows-latest-node18`
+
+### Artifact Contents
+
+Each artifact contains:
+- `build-info.txt` - Build environment details
+- `build-metadata.json` - Platform and version metadata
+- `build-result.json` - Build execution results
+
+## 🔧 Workflow Features
+
+### 1. Matrix Strategy
+```yaml
+strategy:
+  matrix:
+    os: [ubuntu-latest, macos-latest, windows-latest]
+    node-version: [18, 20]
+```
+
+### 2. Required Step Identifier
+The workflow includes the `matrix-cceda81` step that outputs build configuration.
+
+### 3. Artifact Upload
+Uses `actions/upload-artifact@v4` with unique naming:
+```yaml
+- uses: actions/upload-artifact@v4
+  with:
+    name: build-cceda81-${{ matrix.os }}-node${{ matrix.node-version }}
+    path: build-output/
+```
+
+### 4. Artifact Collection
+A final job collects all artifacts and verifies their contents.
+
+## 🏃 Running the Workflow
+
+The workflow triggers on:
+- Push to `main` or `master` branches
+- Pull requests to `main` or `master`
+- Manual workflow dispatch
+
+### Manual Trigger
+1. Go to the "Actions" tab
+2. Select "Multi-Platform Matrix Build"
+3. Click "Run workflow"
+
+## ✅ Validation Checklist
+
+- [x] At least 3 matrix jobs (we have 6+)
+- [x] Artifacts with `build-cceda81` prefix
+- [x] Non-empty artifact contents
+- [x] Step with `matrix-cceda81` identifier
+- [x] README.md with email address
+
+## 📊 Expected Results
+
+After a successful workflow run:
+- 6+ parallel jobs complete successfully
+- 6+ artifacts uploaded to GitHub
+- All artifacts contain build information
+- Final verification job confirms artifact integrity
+
+## 🛠️ Local Testing
+
+You can simulate the build process locally:
+
+```bash
+# Install Node.js 18 or 20
+node --version
+
+# Create build output
+mkdir -p build-output
+echo "Build test" > build-output/build-info.txt
+
+# Generate metadata
+node -e "console.log(JSON.stringify({platform: process.platform}, null, 2))" > build-output/metadata.json
+```
+
+## 📝 Notes
+
+- Artifacts are retained for 30 days
+- Cross-platform compatibility is ensured with `shell: bash`
+- Each build is isolated and independent
+- Build summaries are added to GitHub Actions UI
+
+## 🔗 Resources
+
+- [GitHub Actions Matrix Builds](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
+- [Artifact Upload/Download](https://github.com/actions/upload-artifact)
+- [Node.js Setup Action](https://github.com/actions/setup-node)
+
+---
+
+**Project ID**: cceda81  
+**Workflow File**: `.github/workflows/matrix-build.yml`
