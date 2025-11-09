@@ -1,131 +1,144 @@
-# Multi-Platform Matrix Build Demo
+name: Multi-Platform Matrix Build
 
-This repository demonstrates a GitHub Actions workflow with matrix build strategy for multi-platform CI/CD.
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
-## 📧 Contact Information
+jobs:
+  matrix-build:
+    name: Build on ${{ matrix.os }} with Node ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20]
+        include:
+          # Additional variant with Python
+          - os: ubuntu-latest
+            node-version: 20
+            python-version: '3.11'
+            variant: 'python'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: matrix-cceda81
+        run: |
+          echo "Building for OS: ${{ matrix.os }}"
+          echo "Node version: ${{ matrix.node-version }}"
+          echo "Variant: ${{ matrix.variant || 'standard' }}"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Setup Python (if applicable)
+        if: matrix.python-version
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Display environment info
+        run: |
+          node --version
+          npm --version
+        shell: bash
+      
+      - name: Generate build artifact
+        run: |
+          mkdir -p build-output
+          echo "Build Information" > build-output/build-info.txt
+          echo "==================" >> build-output/build-info.txt
+          echo "OS: ${{ matrix.os }}" >> build-output/build-info.txt
+          echo "Node Version: ${{ matrix.node-version }}" >> build-output/build-info.txt
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> build-output/build-info.txt
+          echo "Runner: ${{ runner.name }}" >> build-output/build-info.txt
+          echo "Architecture: ${{ runner.arch }}" >> build-output/build-info.txt
+          
+          # Create a sample build output
+          node -e "console.log(JSON.stringify({
+            platform: process.platform,
+            arch: process.arch,
+            nodeVersion: process.version,
+            build: 'success',
+            timestamp: new Date().toISOString()
+          }, null, 2))" > build-output/build-metadata.json
+        shell: bash
+      
+      - name: Run build simulation
+        run: |
+          echo "Simulating build process..."
+          node -e "
+            const fs = require('fs');
+            const buildResult = {
+              status: 'success',
+              os: '${{ matrix.os }}',
+              nodeVersion: '${{ matrix.node-version }}',
+              artifacts: ['build-info.txt', 'build-metadata.json'],
+              buildTime: new Date().toISOString()
+            };
+            fs.writeFileSync('build-output/build-result.json', JSON.stringify(buildResult, null, 2));
+            console.log('Build completed successfully!');
+          "
+        shell: bash
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-cceda81-${{ matrix.os }}-node${{ matrix.node-version }}
+          path: build-output/
+          retention-days: 30
+      
+      - name: Build summary
+        run: |
+          echo "### Build Summary :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **OS**: ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node Version**: ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact**: build-cceda81-${{ matrix.os }}-node${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+        shell: bash
 
-**Email**: devops@example.com
-
-## 🚀 Workflow Overview
-
-This workflow implements a matrix build strategy that:
-
-- **Builds across multiple platforms**: Ubuntu, macOS, and Windows
-- **Tests multiple Node.js versions**: 18 and 20
-- **Runs jobs in parallel**: All matrix combinations execute simultaneously
-- **Generates unique artifacts**: Each build produces platform-specific artifacts
-- **Collects and verifies**: Final job downloads and validates all artifacts
-
-## 📦 Matrix Configuration
-
-The workflow uses a 3x2 matrix (plus one additional variant):
-
-| OS | Node Version | Total Jobs |
-|---|---|---|
-| ubuntu-latest | 18, 20 | 2 |
-| macos-latest | 18, 20 | 2 |
-| windows-latest | 18, 20 | 2 |
-| **Total** | | **6+ jobs** |
-
-## 🎯 Artifacts Generated
-
-Each matrix job generates an artifact named: `build-cceda81-{os}-node{version}`
-
-Examples:
-- `build-cceda81-ubuntu-latest-node18`
-- `build-cceda81-macos-latest-node20`
-- `build-cceda81-windows-latest-node18`
-
-### Artifact Contents
-
-Each artifact contains:
-- `build-info.txt` - Build environment details
-- `build-metadata.json` - Platform and version metadata
-- `build-result.json` - Build execution results
-
-## 🔧 Workflow Features
-
-### 1. Matrix Strategy
-```yaml
-strategy:
-  matrix:
-    os: [ubuntu-latest, macos-latest, windows-latest]
-    node-version: [18, 20]
-```
-
-### 2. Required Step Identifier
-The workflow includes the `matrix-cceda81` step that outputs build configuration.
-
-### 3. Artifact Upload
-Uses `actions/upload-artifact@v4` with unique naming:
-```yaml
-- uses: actions/upload-artifact@v4
-  with:
-    name: build-cceda81-${{ matrix.os }}-node${{ matrix.node-version }}
-    path: build-output/
-```
-
-### 4. Artifact Collection
-A final job collects all artifacts and verifies their contents.
-
-## 🏃 Running the Workflow
-
-The workflow triggers on:
-- Push to `main` or `master` branches
-- Pull requests to `main` or `master`
-- Manual workflow dispatch
-
-### Manual Trigger
-1. Go to the "Actions" tab
-2. Select "Multi-Platform Matrix Build"
-3. Click "Run workflow"
-
-## ✅ Validation Checklist
-
-- [x] At least 3 matrix jobs (we have 6+)
-- [x] Artifacts with `build-cceda81` prefix
-- [x] Non-empty artifact contents
-- [x] Step with `matrix-cceda81` identifier
-- [x] README.md with email address
-
-## 📊 Expected Results
-
-After a successful workflow run:
-- 6+ parallel jobs complete successfully
-- 6+ artifacts uploaded to GitHub
-- All artifacts contain build information
-- Final verification job confirms artifact integrity
-
-## 🛠️ Local Testing
-
-You can simulate the build process locally:
-
-```bash
-# Install Node.js 18 or 20
-node --version
-
-# Create build output
-mkdir -p build-output
-echo "Build test" > build-output/build-info.txt
-
-# Generate metadata
-node -e "console.log(JSON.stringify({platform: process.platform}, null, 2))" > build-output/metadata.json
-```
-
-## 📝 Notes
-
-- Artifacts are retained for 30 days
-- Cross-platform compatibility is ensured with `shell: bash`
-- Each build is isolated and independent
-- Build summaries are added to GitHub Actions UI
-
-## 🔗 Resources
-
-- [GitHub Actions Matrix Builds](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
-- [Artifact Upload/Download](https://github.com/actions/upload-artifact)
-- [Node.js Setup Action](https://github.com/actions/setup-node)
-
----
-
-**Project ID**: cceda81  
-**Workflow File**: `.github/workflows/matrix-build.yml`
+  collect-artifacts:
+    name: Collect and Verify Artifacts
+    needs: matrix-build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-builds
+      
+      - name: List all artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -R all-builds/
+          
+          echo ""
+          echo "### Artifact Collection Summary :package:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Total artifacts collected:" >> $GITHUB_STEP_SUMMARY
+          find all-builds -type d -mindepth 1 -maxdepth 1 | wc -l >> $GITHUB_STEP_SUMMARY
+      
+      - name: Verify artifact contents
+        run: |
+          echo "Verifying artifact contents..."
+          for dir in all-builds/*/; do
+            echo "Checking: $dir"
+            if [ -f "$dir/build-info.txt" ]; then
+              echo "✅ build-info.txt found"
+              cat "$dir/build-info.txt"
+            fi
+            if [ -f "$dir/build-metadata.json" ]; then
+              echo "✅ build-metadata.json found"
+              cat "$dir/build-metadata.json"
+            fi
+            echo "---"
+          done
